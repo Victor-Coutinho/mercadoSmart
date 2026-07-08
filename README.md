@@ -19,13 +19,16 @@ O projeto está sendo desenvolvido para a disciplina de dispositivos móveis, co
 - Reutilização de compras anteriores como uma nova lista.
 - Interface em Material 3, com cards, dialogs, bottom sheets e barra inferior de totais.
 
-## Próximas melhorias planejadas
+## Importação por foto com IA
 
-Uma das próximas funcionalidades será o reconhecimento de uma lista física de compras usando a câmera do celular.
+O app já possui fluxo de importação por foto:
 
-A proposta é permitir que o usuário tire uma foto de uma lista escrita em papel e o aplicativo utilize uma API de inteligência artificial da Google para reconhecer os itens automaticamente. Depois disso, os itens poderão ser adicionados à lista digital e organizados por seção.
+- o usuário tira uma foto ou escolhe uma imagem da galeria;
+- o Google ML Kit extrai o texto da imagem via OCR em Android/iOS;
+- o texto é enviado para um interpretador de lista;
+- os itens reconhecidos aparecem em uma tela de revisão antes de entrar na lista.
 
-Essa funcionalidade ainda será integrada ao fluxo principal do app.
+Quando a chave do Gemini é informada, o app usa a Gemini API para extrair os produtos, quantidades e seções. Sem chave, ele usa um classificador local por palavras-chave, mantendo o app funcional para testes e apresentação.
 
 ## Como rodar o projeto
 
@@ -50,6 +53,22 @@ flutter run -d web-server --web-port 5174
 ```
 
 Depois abra a URL exibida no terminal.
+
+### Rodando com Gemini
+
+Informe a chave da API com `--dart-define` ao rodar o app:
+
+```powershell
+flutter run -d chrome --web-port 5174 --dart-define=GEMINI_API_KEY=SUA_CHAVE_AQUI
+```
+
+O modelo padrão usado para extração é `gemini-2.5-flash-lite`, escolhido por ser leve, econômico e adequado para tarefas simples de extração/classificação. Para trocar o modelo sem mexer no código:
+
+```powershell
+flutter run -d chrome --web-port 5174 --dart-define=GEMINI_API_KEY=SUA_CHAVE_AQUI --dart-define=GEMINI_MODEL=gemini-3.5-flash
+```
+
+Não coloque a chave diretamente no código nem faça commit dela no repositório.
 
 ## Observações
 
