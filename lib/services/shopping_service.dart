@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import '../core/constants/default_sections.dart';
+import '../models/imported_shopping_item.dart';
 import '../models/market.dart';
 import '../models/purchase_history.dart';
 import '../models/shopping_item.dart';
@@ -296,6 +297,50 @@ class ShoppingService {
     );
   }
 
+  Future<void> importItems({
+    required String listId,
+    required List<ImportedShoppingItem> importedItems,
+  }) async {
+    if (importedItems.isEmpty) return;
+
+    final sectionsByName = {
+      for (final section in sectionsForList(listId))
+        _normalize(section.name): section,
+    };
+
+    for (final item in importedItems) {
+      final name = item.name.trim();
+      if (name.isEmpty) continue;
+
+      final sectionKey = _normalize(item.sectionName);
+      var section = sectionsByName[sectionKey];
+      if (section == null) {
+        section = ShoppingSection(
+          id: _uuid.v4(),
+          listId: listId,
+          name: item.sectionName.trim().isEmpty
+              ? 'Mercearia'
+              : item.sectionName.trim(),
+          order: sectionsByName.length,
+        );
+        await _sectionRepository.save(section);
+        sectionsByName[sectionKey] = section;
+      }
+
+      await _itemRepository.save(
+        ShoppingItem(
+          id: _uuid.v4(),
+          listId: listId,
+          sectionId: section.id,
+          name: name,
+          quantity: item.quantity <= 0 ? 1 : item.quantity,
+          unitPrice: item.unitPrice < 0 ? 0 : item.unitPrice,
+          purchased: false,
+        ),
+      );
+    }
+  }
+
   Future<void> updateItem(ShoppingItem item) => _itemRepository.save(item);
 
   Future<void> deleteItem(String id) => _itemRepository.delete(id);
@@ -364,6 +409,24 @@ class ShoppingService {
     for (var i = 0; i < sections.length; i++) {
       await _sectionRepository.save(sections[i].copyWith(order: i));
     }
+  }
+
+  static String _normalize(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ç', 'c')
+        .trim();
   }
 }
 

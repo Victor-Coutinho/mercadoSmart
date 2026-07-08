@@ -107,6 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     );
                   },
+                  onDelete: () => _deleteSingle(context, list.id),
                 );
               },
             ),
@@ -159,6 +160,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .read(shoppingControllerProvider.notifier)
         .deleteLists(_selectedIds);
     setState(_selectedIds.clear);
+  }
+
+  Future<void> _deleteSingle(BuildContext context, String id) async {
+    final confirmed = await ConfirmationDialog.show(
+      context,
+      title: 'Excluir lista?',
+      message: 'Essa ação remove a lista, suas seções e seus itens salvos.',
+      confirmLabel: 'Excluir',
+      destructive: true,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    await ref.read(shoppingControllerProvider.notifier).deleteLists([id]);
+    if (mounted) {
+      setState(() => _selectedIds.remove(id));
+    }
   }
 
   Future<void> _renameSelected(BuildContext context) async {

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/imported_shopping_item.dart';
 import '../models/shopping_item.dart';
 import '../models/shopping_list.dart';
 import '../models/shopping_section.dart';
@@ -111,6 +112,14 @@ class ShoppingController extends Notifier<AppState> {
       quantity: quantity,
       unitPrice: unitPrice,
     );
+    _refresh();
+  }
+
+  Future<void> importItems({
+    required String listId,
+    required List<ImportedShoppingItem> items,
+  }) async {
+    await _service.importItems(listId: listId, importedItems: items);
     _refresh();
   }
 

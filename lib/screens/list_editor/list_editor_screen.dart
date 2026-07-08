@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/utils/app_formatters.dart';
+import '../../models/imported_shopping_item.dart';
 import '../../models/shopping_item.dart';
 import '../../models/shopping_section.dart';
+import '../../providers/import_providers.dart';
 import '../../providers/shopping_controller.dart';
+import '../../services/ocr/ocr_exceptions.dart';
 import '../../widgets/common/confirmation_dialog.dart';
 import '../../widgets/common/text_input_dialog.dart';
+import '../import_review/import_review_screen.dart';
 import '../purchase/purchase_screen.dart';
 
 class ListEditorScreen extends ConsumerStatefulWidget {
@@ -25,6 +30,7 @@ class _ListEditorScreenState extends ConsumerState<ListEditorScreen> {
   final _priceController = TextEditingController();
   final _nameFocus = FocusNode();
   String? _sectionId;
+  bool _isImporting = false;
 
   @override
   void dispose() {
@@ -52,6 +58,17 @@ class _ListEditorScreenState extends ConsumerState<ListEditorScreen> {
       appBar: AppBar(
         title: Text(list.name),
         actions: [
+          IconButton(
+            tooltip: 'Importar por foto',
+            icon: _isImporting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.document_scanner_outlined),
+            onPressed: _isImporting ? null : () => _startPhotoImport(sections),
+          ),
           IconButton(
             tooltip: 'Seções',
             icon: const Icon(Icons.view_week_outlined),
@@ -87,6 +104,7 @@ class _ListEditorScreenState extends ConsumerState<ListEditorScreen> {
             sectionId: _sectionId,
             onSectionChanged: (value) => setState(() => _sectionId = value),
             onAdd: _addItem,
+            onImport: _isImporting ? null : () => _startPhotoImport(sections),
           ),
           const SizedBox(height: 20),
           for (final section in sections) ...[
@@ -127,6 +145,83 @@ class _ListEditorScreenState extends ConsumerState<ListEditorScreen> {
     _quantityController.text = '1';
     _priceController.clear();
     _nameFocus.requestFocus();
+  }
+
+  Future<void> _startPhotoImport(List<ShoppingSection> sections) async {
+    final source = await _chooseImageSource();
+    if (source == null || !mounted) return;
+
+    setState(() => _isImporting = true);
+    try {
+      final result = await ref.read(photoImportServiceProvider).import(source);
+      if (!mounted || result == null) return;
+
+      final reviewedItems =
+          await Navigator.of(context).push<List<ImportedShoppingItem>>(
+        MaterialPageRoute(
+          builder: (_) => ImportReviewScreen(
+            initialItems: result.items,
+            rawText: result.rawText,
+            sections: sections,
+          ),
+        ),
+      );
+
+      if (!mounted || reviewedItems == null || reviewedItems.isEmpty) return;
+      await ref.read(shoppingControllerProvider.notifier).importItems(
+            listId: widget.listId,
+            items: reviewedItems,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${reviewedItems.length} item(ns) importados.'),
+        ),
+      );
+    } on OcrUnsupportedException catch (error) {
+      _showImportError(error.message);
+    } catch (error) {
+      _showImportError('Não foi possível importar a imagem. Tente novamente.');
+    } finally {
+      if (mounted) {
+        setState(() => _isImporting = false);
+      }
+    }
+  }
+
+  Future<ImageSource?> _chooseImageSource() {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Tirar foto'),
+                subtitle: const Text('Abrir a câmera do celular'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.image_outlined),
+                title: const Text('Escolher imagem'),
+                subtitle: const Text('Usar uma foto da galeria'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showImportError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   Future<void> _editItem(ShoppingItem item) async {
@@ -211,6 +306,7 @@ class _ItemForm extends StatelessWidget {
     required this.sectionId,
     required this.onSectionChanged,
     required this.onAdd,
+    required this.onImport,
   });
 
   final TextEditingController nameController;
@@ -221,6 +317,7 @@ class _ItemForm extends StatelessWidget {
   final String? sectionId;
   final ValueChanged<String?> onSectionChanged;
   final VoidCallback onAdd;
+  final VoidCallback? onImport;
 
   @override
   Widget build(BuildContext context) {
@@ -284,6 +381,15 @@ class _ItemForm extends StatelessWidget {
                 icon: const Icon(Icons.add),
                 label: const Text('Adicionar'),
                 onPressed: onAdd,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.document_scanner_outlined),
+                label: const Text('Importar por foto'),
+                onPressed: onImport,
               ),
             ),
           ],

@@ -14,6 +14,7 @@ class ShoppingListCard extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     required this.onEdit,
+    required this.onDelete,
   });
 
   final ShoppingList list;
@@ -23,6 +24,7 @@ class ShoppingListCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +79,11 @@ class ShoppingListCard extends StatelessWidget {
                       tooltip: 'Editar lista',
                       icon: const Icon(Icons.edit_note_outlined),
                       onPressed: onEdit,
+                    ),
+                    IconButton(
+                      tooltip: 'Excluir lista',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: onDelete,
                     ),
                     if (selected)
                       const Icon(Icons.check_circle, color: Color(0xFF164E63)),
