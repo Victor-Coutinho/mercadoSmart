@@ -5,6 +5,7 @@ import '../../core/utils/app_formatters.dart';
 import '../../core/utils/section_visuals.dart';
 import '../../models/shopping_item.dart';
 import '../../providers/shopping_controller.dart';
+import '../../widgets/common/text_input_dialog.dart';
 import '../list_editor/list_editor_screen.dart';
 
 class PurchaseScreen extends ConsumerWidget {
@@ -103,30 +104,16 @@ class PurchaseScreen extends ConsumerWidget {
     WidgetRef ref,
     String defaultName,
   ) async {
-    final nameController = TextEditingController(text: defaultName);
     final historyName = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Salvar compra'),
-        content: TextField(
-          controller: nameController,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nome no histórico'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton.icon(
-            icon: const Icon(Icons.save_outlined),
-            label: const Text('Salvar'),
-            onPressed: () => Navigator.pop(context, nameController.text.trim()),
-          ),
-        ],
+      builder: (_) => TextInputDialog(
+        title: 'Salvar compra',
+        label: 'Nome no histórico',
+        confirmLabel: 'Salvar',
+        confirmIcon: Icons.save_outlined,
+        initialValue: defaultName,
       ),
     );
-    nameController.dispose();
     if (historyName == null || historyName.isEmpty) {
       return;
     }

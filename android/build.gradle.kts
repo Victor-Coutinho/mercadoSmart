@@ -5,6 +5,8 @@ allprojects {
     }
 }
 
+val projectCompileSdk = 36
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
@@ -17,6 +19,17 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+}
+subprojects {
+    plugins.withId("com.android.library") {
+        extensions.findByName("android")?.let { androidExtension ->
+            androidExtension.javaClass.methods
+                .firstOrNull { method ->
+                    method.name == "setCompileSdk" && method.parameterTypes.size == 1
+                }
+                ?.invoke(androidExtension, projectCompileSdk)
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {

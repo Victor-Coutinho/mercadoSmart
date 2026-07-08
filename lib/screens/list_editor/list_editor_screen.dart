@@ -7,6 +7,7 @@ import '../../models/shopping_item.dart';
 import '../../models/shopping_section.dart';
 import '../../providers/shopping_controller.dart';
 import '../../widgets/common/confirmation_dialog.dart';
+import '../../widgets/common/text_input_dialog.dart';
 import '../purchase/purchase_screen.dart';
 
 class ListEditorScreen extends ConsumerStatefulWidget {
@@ -129,96 +130,17 @@ class _ListEditorScreenState extends ConsumerState<ListEditorScreen> {
   }
 
   Future<void> _editItem(ShoppingItem item) async {
-    final nameController = TextEditingController(text: item.name);
-    final quantityController =
-        TextEditingController(text: item.quantity.toString());
-    final priceController =
-        TextEditingController(text: item.unitPrice.toStringAsFixed(2));
-    var sectionId = item.sectionId;
     final sections =
         ref.read(shoppingControllerProvider).sectionsForList(widget.listId);
 
     final updated = await showModalBottomSheet<ShoppingItem>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-        ),
-        child: StatefulBuilder(
-          builder: (context, setModalState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Item')),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: quantityController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Qtd.'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: priceController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Preço'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: sectionId,
-                decoration: const InputDecoration(labelText: 'Seção'),
-                items: sections
-                    .map((section) => DropdownMenuItem(
-                        value: section.id, child: Text(section.name)))
-                    .toList(),
-                onChanged: (value) =>
-                    setModalState(() => sectionId = value ?? sectionId),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.pop(
-                      context,
-                      item.copyWith(
-                        name: nameController.text.trim(),
-                        quantity: double.tryParse(
-                                quantityController.text.replaceAll(',', '.')) ??
-                            1,
-                        unitPrice: double.tryParse(
-                                priceController.text.replaceAll(',', '.')) ??
-                            0,
-                        sectionId: sectionId,
-                      ),
-                    );
-                  },
-                  child: const Text('Salvar'),
-                ),
-              ),
-            ],
-          ),
-        ),
+      builder: (_) => _EditItemSheet(
+        item: item,
+        sections: sections,
       ),
     );
-
-    nameController.dispose();
-    quantityController.dispose();
-    priceController.dispose();
 
     if (updated != null && updated.name.isNotEmpty) {
       await ref.read(shoppingControllerProvider.notifier).updateItem(updated);
@@ -533,28 +455,15 @@ class _SectionsSheet extends ConsumerWidget {
     String? listId,
     ShoppingSection? section,
   }) async {
-    final controller = TextEditingController(text: section?.name ?? '');
     final name = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(section == null ? 'Nova seção' : 'Renomear seção'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nome'),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Salvar'),
-          ),
-        ],
+      builder: (_) => TextInputDialog(
+        title: section == null ? 'Nova seção' : 'Renomear seção',
+        label: 'Nome',
+        confirmLabel: 'Salvar',
+        initialValue: section?.name ?? '',
       ),
     );
-    controller.dispose();
     if (name == null || name.isEmpty) {
       return;
     }
@@ -565,5 +474,128 @@ class _SectionsSheet extends ConsumerWidget {
     } else {
       await notifier.renameSection(section.id, name);
     }
+  }
+}
+
+class _EditItemSheet extends StatefulWidget {
+  const _EditItemSheet({
+    required this.item,
+    required this.sections,
+  });
+
+  final ShoppingItem item;
+  final List<ShoppingSection> sections;
+
+  @override
+  State<_EditItemSheet> createState() => _EditItemSheetState();
+}
+
+class _EditItemSheetState extends State<_EditItemSheet> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _quantityController;
+  late final TextEditingController _priceController;
+  late String _sectionId;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.item.name);
+    _quantityController =
+        TextEditingController(text: widget.item.quantity.toString());
+    _priceController =
+        TextEditingController(text: widget.item.unitPrice.toStringAsFixed(2));
+    _sectionId = widget.item.sectionId;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _quantityController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(labelText: 'Item'),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _quantityController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Qtd.'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: _priceController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Preço'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: _sectionId,
+            decoration: const InputDecoration(labelText: 'Seção'),
+            items: widget.sections
+                .map(
+                  (section) => DropdownMenuItem(
+                    value: section.id,
+                    child: Text(section.name),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() => _sectionId = value);
+            },
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  widget.item.copyWith(
+                    name: _nameController.text.trim(),
+                    quantity: double.tryParse(
+                          _quantityController.text.replaceAll(',', '.'),
+                        ) ??
+                        1,
+                    unitPrice: double.tryParse(
+                          _priceController.text.replaceAll(',', '.'),
+                        ) ??
+                        0,
+                    sectionId: _sectionId,
+                  ),
+                );
+              },
+              child: const Text('Salvar'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

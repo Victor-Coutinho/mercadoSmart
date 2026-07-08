@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/shopping_list.dart';
 import '../../providers/shopping_controller.dart';
 import '../../widgets/common/confirmation_dialog.dart';
+import '../../widgets/common/text_input_dialog.dart';
 import '../history/purchase_history_screen.dart';
 import '../list_editor/list_editor_screen.dart';
 import '../purchase/purchase_screen.dart';
@@ -167,29 +168,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    final controller = TextEditingController(text: list.name);
     final name = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar nome'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nome da lista'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Salvar'),
-          ),
-        ],
+      builder: (_) => TextInputDialog(
+        title: 'Editar nome',
+        label: 'Nome da lista',
+        confirmLabel: 'Salvar',
+        initialValue: list.name,
       ),
     );
-    controller.dispose();
 
     if (name == null || name.isEmpty) {
       return;

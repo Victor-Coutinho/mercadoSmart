@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/app_formatters.dart';
 import '../../models/purchase_history.dart';
 import '../../providers/shopping_controller.dart';
+import '../../widgets/common/text_input_dialog.dart';
 import '../list_editor/list_editor_screen.dart';
 
 class PurchaseHistoryScreen extends ConsumerStatefulWidget {
@@ -92,30 +93,16 @@ class _PurchaseHistoryScreenState extends ConsumerState<PurchaseHistoryScreen> {
     BuildContext sheetContext,
     PurchaseHistory history,
   ) async {
-    final nameController = TextEditingController(text: '${history.name} nova');
     final listName = await showDialog<String>(
       context: sheetContext,
-      builder: (context) => AlertDialog(
-        title: const Text('Reutilizar compra'),
-        content: TextField(
-          controller: nameController,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nome da nova lista'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton.icon(
-            icon: const Icon(Icons.copy_outlined),
-            label: const Text('Criar lista'),
-            onPressed: () => Navigator.pop(context, nameController.text.trim()),
-          ),
-        ],
+      builder: (_) => TextInputDialog(
+        title: 'Reutilizar compra',
+        label: 'Nome da nova lista',
+        confirmLabel: 'Criar lista',
+        confirmIcon: Icons.copy_outlined,
+        initialValue: '${history.name} nova',
       ),
     );
-    nameController.dispose();
     if (listName == null || listName.isEmpty) {
       return;
     }
