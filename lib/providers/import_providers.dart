@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/ai/gemini_shopping_list_interpreter.dart';
 import '../services/ai/local_shopping_list_interpreter.dart';
+import '../services/ai/remote_shopping_list_interpreter.dart';
 import '../services/ai/shopping_list_interpreter.dart';
 import '../services/image_capture_service.dart';
 import '../services/import/photo_import_service.dart';
@@ -19,6 +21,18 @@ final ocrServiceProvider = Provider<OcrService>((ref) {
 final shoppingListInterpreterProvider =
     Provider<ShoppingListInterpreter>((ref) {
   final localInterpreter = LocalShoppingListInterpreter();
+
+  if (kIsWeb) {
+    const endpoint = String.fromEnvironment(
+      'GEMINI_PROXY_URL',
+      defaultValue: '/api/interpret-shopping-list',
+    );
+    return RemoteShoppingListInterpreter(
+      endpoint: Uri.base.resolve(endpoint),
+      fallback: localInterpreter,
+    );
+  }
+
   const apiKey = String.fromEnvironment('GEMINI_API_KEY');
   const model = String.fromEnvironment(
     'GEMINI_MODEL',

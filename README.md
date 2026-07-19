@@ -56,19 +56,43 @@ Depois abra a URL exibida no terminal.
 
 ### Rodando com Gemini
 
-Informe a chave da API com `--dart-define` ao rodar o app:
+Para Android/iOS ou testes locais fora da Web publica, informe a chave da API com `--dart-define` ao rodar o app:
 
 ```powershell
-flutter run -d chrome --web-port 5174 --dart-define=GEMINI_API_KEY=SUA_CHAVE_AQUI
+flutter run --dart-define=GEMINI_API_KEY=SUA_CHAVE_AQUI
 ```
 
 O modelo padrão usado para extração é `gemini-2.5-flash-lite`, escolhido por ser leve, econômico e adequado para tarefas simples de extração/classificação. Para trocar o modelo sem mexer no código:
 
 ```powershell
-flutter run -d chrome --web-port 5174 --dart-define=GEMINI_API_KEY=SUA_CHAVE_AQUI --dart-define=GEMINI_MODEL=gemini-3.5-flash
+flutter run --dart-define=GEMINI_API_KEY=SUA_CHAVE_AQUI --dart-define=GEMINI_MODEL=gemini-3.5-flash
 ```
 
 Não coloque a chave diretamente no código nem faça commit dela no repositório.
+
+### Gemini seguro na Web com Vercel
+
+Para producao Web, nao envie `GEMINI_API_KEY` com `--dart-define`, porque valores enviados para o Flutter Web podem aparecer no JavaScript final.
+
+O projeto inclui uma funcao serverless em `api/interpret-shopping-list.js`. No deploy da Vercel, configure a variavel de ambiente:
+
+```text
+GEMINI_API_KEY=SUA_CHAVE_AQUI
+```
+
+Opcionalmente, configure o modelo:
+
+```text
+GEMINI_MODEL=gemini-2.5-flash-lite
+```
+
+Na Web, o app chama `/api/interpret-shopping-list`, e a funcao chama a Gemini API pelo servidor. Assim a chave fica protegida no ambiente da Vercel.
+
+Arquivos de deploy:
+
+- `vercel.json`: aponta o build para `flutter build web` e publica `build/web`.
+- `vercel-build.sh`: instala Flutter stable no ambiente da Vercel quando necessario.
+- `.env.example`: lista as variaveis esperadas sem incluir segredo real.
 
 ## Observações
 
