@@ -44,7 +44,10 @@ class RemoteShoppingListInterpreter implements ShoppingListInterpreter {
           .where((item) => item.name.trim().isNotEmpty)
           .toList();
 
-      return items.isEmpty ? fallback.interpret(rawText) : items;
+      if (items.isEmpty) {
+        return await fallback.interpret(rawText);
+      }
+      return items;
     } catch (_) {
       return fallback.interpret(rawText);
     } finally {
