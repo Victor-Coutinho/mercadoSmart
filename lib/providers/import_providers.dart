@@ -7,6 +7,7 @@ import '../services/ai/remote_shopping_list_interpreter.dart';
 import '../services/ai/shopping_list_interpreter.dart';
 import '../services/image_capture_service.dart';
 import '../services/import/photo_import_service.dart';
+import '../services/import/remote_image_import_interpreter.dart';
 import '../services/ocr/ocr_service.dart';
 import '../services/ocr/ocr_service_factory.dart';
 
@@ -51,9 +52,19 @@ final shoppingListInterpreterProvider =
 });
 
 final photoImportServiceProvider = Provider<PhotoImportService>((ref) {
+  const imageEndpoint = String.fromEnvironment(
+    'GEMINI_IMAGE_PROXY_URL',
+    defaultValue: '/api/interpret-shopping-image',
+  );
+
   return PhotoImportService(
     imageCaptureService: ref.watch(imageCaptureServiceProvider),
     ocrService: ref.watch(ocrServiceProvider),
     interpreter: ref.watch(shoppingListInterpreterProvider),
+    imageInterpreter: kIsWeb
+        ? RemoteImageImportInterpreter(
+            endpoint: Uri.base.resolve(imageEndpoint),
+          )
+        : null,
   );
 });

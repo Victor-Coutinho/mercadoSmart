@@ -74,7 +74,12 @@ Não coloque a chave diretamente no código nem faça commit dela no repositóri
 
 Para producao Web, nao envie `GEMINI_API_KEY` com `--dart-define`, porque valores enviados para o Flutter Web podem aparecer no JavaScript final.
 
-O projeto inclui uma funcao serverless em `api/interpret-shopping-list.js`. No deploy da Vercel, configure a variavel de ambiente:
+O projeto inclui funcoes serverless para texto e imagem:
+
+- `api/interpret-shopping-list.js`: interpreta listas digitadas ou texto ja extraido.
+- `api/interpret-shopping-image.js`: recebe a foto pela Web e usa Gemini multimodal para extrair o texto e os itens diretamente da imagem.
+
+No deploy da Vercel, configure a variavel de ambiente:
 
 ```text
 GEMINI_API_KEY=SUA_CHAVE_AQUI
@@ -86,7 +91,9 @@ Opcionalmente, configure o modelo:
 GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
-Na Web, o app chama `/api/interpret-shopping-list`, e a funcao chama a Gemini API pelo servidor. Assim a chave fica protegida no ambiente da Vercel.
+Na Web, o app chama `/api/interpret-shopping-list` para texto e `/api/interpret-shopping-image` para fotos. As funcoes chamam a Gemini API pelo servidor, mantendo a chave protegida no ambiente da Vercel. Em Android/iOS, o app continua usando o Google ML Kit para OCR local antes de interpretar os itens.
+
+As imagens escolhidas pelo app sao comprimidas antes do envio para evitar o limite de payload das Vercel Functions.
 
 Arquivos de deploy:
 

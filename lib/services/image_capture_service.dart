@@ -9,8 +9,9 @@ class ImageCaptureService {
   Future<XFile?> pickImage(ImageSource source) {
     return _imagePicker.pickImage(
       source: source,
-      imageQuality: 88,
-      maxWidth: 1600,
+      imageQuality: 72,
+      maxWidth: 1280,
+      maxHeight: 1280,
     );
   }
 }
