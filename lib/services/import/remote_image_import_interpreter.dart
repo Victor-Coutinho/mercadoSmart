@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import '../../models/imported_shopping_item.dart';
+import 'image_import_exception.dart';
 import 'image_import_interpreter.dart';
 
 class RemoteImageImportInterpreter implements ImageImportInterpreter {
@@ -32,7 +33,7 @@ class RemoteImageImportInterpreter implements ImageImportInterpreter {
       );
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        return const ImageImportInterpretation(rawText: '', items: []);
+        throw ImageImportException(_messageForStatus(response));
       }
 
       final payload = jsonDecode(utf8.decode(response.bodyBytes));
@@ -71,6 +72,32 @@ class RemoteImageImportInterpreter implements ImageImportInterpreter {
     if (name.endsWith('.webp')) return 'image/webp';
     if (name.endsWith('.gif')) return 'image/gif';
     return 'image/jpeg';
+  }
+
+  static String _messageForStatus(http.Response response) {
+    final error = _readError(response);
+    if (response.statusCode == 503) {
+      return 'A importacao por foto na Web ainda nao esta configurada. Adicione GEMINI_API_KEY nas variaveis de ambiente da Vercel e faca um novo deploy.';
+    }
+    if (response.statusCode == 413) {
+      return 'A imagem ficou grande demais para importar pela Web. Tente uma foto menor ou recorte a lista.';
+    }
+    if (error.isNotEmpty) {
+      return error;
+    }
+    return 'Nao foi possivel importar a imagem pela Web. Tente novamente.';
+  }
+
+  static String _readError(http.Response response) {
+    try {
+      final payload = jsonDecode(utf8.decode(response.bodyBytes));
+      if (payload is Map) {
+        return _readString(payload['message'] ?? payload['error']);
+      }
+    } catch (_) {
+      return '';
+    }
+    return '';
   }
 
   static ImportedShoppingItem _itemFromJson(Map<String, dynamic> json) {

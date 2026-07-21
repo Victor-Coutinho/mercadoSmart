@@ -96,7 +96,7 @@ module.exports = async function handler(request, response) {
 
     return response.status(200).json({
       rawText: readString(parsed.rawText),
-      items: normalizeItems(parsed.items),
+      items: normalizeItems(readItems(parsed)),
     });
   } catch (error) {
     console.error('Failed to interpret shopping image', error);
@@ -159,6 +159,15 @@ function decodePayload(text) {
     .replace(/\s*```$/, '')
     .trim();
   return JSON.parse(cleaned);
+}
+
+function readItems(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== 'object') return [];
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.itens)) return payload.itens;
+  if (Array.isArray(payload.produtos)) return payload.produtos;
+  return [];
 }
 
 function normalizeItems(items) {

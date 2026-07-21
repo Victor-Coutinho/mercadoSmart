@@ -95,6 +95,8 @@ Na Web, o app chama `/api/interpret-shopping-list` para texto e `/api/interpret-
 
 As imagens escolhidas pelo app sao comprimidas antes do envio para evitar o limite de payload das Vercel Functions.
 
+Se a importacao por foto na Web informar que ainda nao esta configurada, confira se `GEMINI_API_KEY` foi adicionada no ambiente `Production` da Vercel e faca um novo deploy depois de salvar a variavel.
+
 Arquivos de deploy:
 
 - `vercel.json`: aponta o build para `flutter build web` e publica `build/web`.

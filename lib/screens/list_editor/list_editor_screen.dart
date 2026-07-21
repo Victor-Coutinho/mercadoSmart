@@ -9,6 +9,7 @@ import '../../models/shopping_item.dart';
 import '../../models/shopping_section.dart';
 import '../../providers/import_providers.dart';
 import '../../providers/shopping_controller.dart';
+import '../../services/import/image_import_exception.dart';
 import '../../services/ocr/ocr_exceptions.dart';
 import '../../widgets/common/confirmation_dialog.dart';
 import '../../widgets/common/text_input_dialog.dart';
@@ -179,6 +180,8 @@ class _ListEditorScreenState extends ConsumerState<ListEditorScreen> {
         ),
       );
     } on OcrUnsupportedException catch (error) {
+      _showImportError(error.message);
+    } on ImageImportException catch (error) {
       _showImportError(error.message);
     } catch (error) {
       _showImportError('Não foi possível importar a imagem. Tente novamente.');

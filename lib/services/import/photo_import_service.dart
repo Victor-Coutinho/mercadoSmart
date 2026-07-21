@@ -4,6 +4,7 @@ import '../../models/imported_shopping_item.dart';
 import '../ai/shopping_list_interpreter.dart';
 import '../image_capture_service.dart';
 import '../ocr/ocr_service.dart';
+import 'image_import_exception.dart';
 import 'image_import_interpreter.dart';
 
 class PhotoImportResult {
@@ -39,6 +40,11 @@ class PhotoImportService {
     final imageInterpreter = _imageInterpreter;
     if (imageInterpreter != null) {
       final result = await imageInterpreter.interpretImage(image);
+      if (result.rawText.trim().isEmpty && result.items.isEmpty) {
+        throw const ImageImportException(
+          'Nao foi possivel reconhecer itens nessa imagem. Tente uma foto mais nitida ou recorte apenas a lista.',
+        );
+      }
       return PhotoImportResult(rawText: result.rawText, items: result.items);
     }
 

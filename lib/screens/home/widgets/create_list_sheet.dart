@@ -6,6 +6,7 @@ import '../../../models/imported_shopping_item.dart';
 import '../../../models/shopping_list.dart';
 import '../../../providers/import_providers.dart';
 import '../../../providers/shopping_controller.dart';
+import '../../../services/import/image_import_exception.dart';
 import '../../../services/ocr/ocr_exceptions.dart';
 import '../../import_review/import_review_screen.dart';
 
@@ -192,6 +193,8 @@ class _CreateListSheetState extends ConsumerState<CreateListSheet> {
         Navigator.pop<ShoppingList>(context, list);
       }
     } on OcrUnsupportedException catch (error) {
+      _showImportError(error.message);
+    } on ImageImportException catch (error) {
       _showImportError(error.message);
     } catch (_) {
       _showImportError('Não foi possível importar a imagem. Tente novamente.');
